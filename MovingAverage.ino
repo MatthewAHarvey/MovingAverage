@@ -5,11 +5,11 @@
 
 const uint32_t baudrate = 250000;
 const uint16_t windowSize = 512;
-MovingAverage <float> av(windowSize);
+MovingAverage <int> av(windowSize);
 // MovingAverage <int> avInt(windowSize);
 // MovingAverage <int32_t> avInt32(windowSize);
 // MovingAverage <int8_t> avInt8(windowSize);
-float i = 0;
+int i = 0;
 
 void setup(){
     Serial.begin(baudrate);
@@ -25,8 +25,9 @@ void loop(){
     Serial.println(t1-t0);
     t0 = micros();
     for(uint8_t j = 0; j < 100; j++){
-        av.updateFloat(i);
-        // av.update(i);
+        // av.updateFloat(i);
+        //av.update(i);
+        av.updateSum(i);
     }
     t1 = micros();
     Serial.println(t1-t0);

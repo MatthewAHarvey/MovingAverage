@@ -1,3 +1,4 @@
+// https://embeddedgurus.com/stack-overflow/2011/02/efficient-c-tip-13-use-the-modulus-operator-with-caution/
 #ifndef MOVINGAVERAGE_H
 #define MOVINGAVERAGE_H
 
@@ -11,12 +12,29 @@ private:
     uint16_t windowSize = 0;
     uint8_t powerOfTwo = 0;
     uint16_t i = 0; // the current bin to use
-    // int32_t sum = 0;
     T sum = T();    //int32_t average = 0;
     T average = T();
     bool windowFull = false;
     
 public:
+    MovingAverage(uint16_t windowSize, bool arbitraryWindowSize){
+        if(arbitraryWindowSize){
+            this->windowSize = windowSize;
+            window = new T[this->windowSize];
+        }
+        else{
+            while(windowSize > 1){
+                windowSize = windowSize >> 1;
+                powerOfTwo++;
+            }
+            this->windowSize = 1;
+            for(int i = 0; i < powerOfTwo; i++){
+            this->windowSize *= 2;
+            }
+            window = new T[this->windowSize];
+        }
+    }
+
     MovingAverage(uint16_t windowSize){
         // Use a power of 2 for the window size.
 
@@ -28,7 +46,6 @@ public:
         for(int i = 0; i < powerOfTwo; i++){
         this->windowSize *= 2;
         }
-        //window = new int32_t[this->windowSize];
         window = new T[this->windowSize];
     }
 
@@ -41,7 +58,6 @@ public:
         for(int i = 0; i < powerOfTwo; i++){
         this->windowSize *= 2;
         }
-        //window = new int32_t[this->windowSize];
         window = new T[this->windowSize];
 
         for(int i = 0; i < this->windowSize; i++){
@@ -62,12 +78,7 @@ public:
             sum -= window[i]; // remove oldest value
             window[i] = newValue;
             sum += window[i]; // add newest value
-            // Serial.print("Sum: ");
-            // Serial.print(sum);
             average = sum >> powerOfTwo;
-            // Serial.print(", Av: ");
-            // Serial.print(average);
-            //i = (i + 1) % windowSize;
 
             if(++i == windowSize) i = 0;
             return average;
@@ -75,12 +86,8 @@ public:
         else{
             window[i] = newValue;
             sum = sum + window[i];
-            // Serial.print("SUM: ");
-            // Serial.print(sum);
             i++;
             average = sum / i;
-            // Serial.print(", AV: ");
-            // Serial.print(average);
             if(i >= windowSize){
                 windowFull = true;
                 i = 0;
@@ -96,24 +103,15 @@ public:
             sum -= window[i]; // remove oldest value
             window[i] = newValue;
             sum += window[i]; // add newest value
-            // Serial.print("Sum: ");
-            // Serial.print(sum);
             average = sum / windowSize;
-            // Serial.print(", Av: ");
-            // Serial.print(average);
-            // i = (i + 1) % windowSize;
             if(++i == windowSize) i = 0;
             return average;
         }
         else{
             window[i] = newValue;
             sum = sum + window[i];
-            // Serial.print("SUM: ");
-            // Serial.print(sum);
             i++;
             average = sum / i;
-            // Serial.print(", AV: ");
-            // Serial.print(average);
             if(i >= windowSize){
                 windowFull = true;
                 i = 0;
@@ -121,7 +119,27 @@ public:
             return average;
         }
     }
-    
+
+    T updateSum(T newValue){
+        if(windowFull){
+            sum -= window[i]; // remove oldest value
+            window[i] = newValue;
+            sum += window[i]; // add newest value
+            if(++i == windowSize) i = 0;
+            return sum;
+        }
+        else{
+            window[i] = newValue;
+            sum = sum + window[i];
+            i++;
+            if(i >= windowSize){
+                windowFull = true;
+                i = 0;
+            }
+            return sum;
+        }
+    }
+
     T getElement(uint16_t element){
         // For example, if i = 0, the latest value added is returned. Increasing i means increasingly older values. Be careful not to ask for a value older than the length of the window
         return window[(i - 1 - element) % windowSize];
