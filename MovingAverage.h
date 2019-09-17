@@ -10,6 +10,7 @@ private:
     //int32_t *window = NULL;
     T *window = NULL;
     uint16_t windowSize = 0;
+    float inverseWindowSize = 0;
     uint8_t powerOfTwo = 0;
     uint16_t i = 0; // the current bin to use
     T sum = T();    //int32_t average = 0;
@@ -17,7 +18,11 @@ private:
     bool windowFull = false;
     
 public:
+    MovingAverage(){
+    }
+
     MovingAverage(uint16_t windowSize, bool arbitraryWindowSize){
+        inverseWindowSize = 1.0 / float(windowSize);
         if(arbitraryWindowSize){
             this->windowSize = windowSize;
             window = new T[this->windowSize];
@@ -37,7 +42,7 @@ public:
 
     MovingAverage(uint16_t windowSize){
         // Use a power of 2 for the window size.
-
+        inverseWindowSize = 1.0 / float(windowSize);
         while(windowSize > 1){
             windowSize = windowSize >> 1;
             powerOfTwo++;
@@ -50,6 +55,7 @@ public:
     }
 
     MovingAverage(uint16_t windowSize, T seed){
+        inverseWindowSize = 1.0 / float(windowSize);
         while(windowSize > 1){
             windowSize = windowSize >> 1;
             powerOfTwo++;
@@ -72,6 +78,40 @@ public:
         reset();
     }
 
+    void init(uint16_t windowSize, bool arbitraryWindowSize){
+        inverseWindowSize = 1.0 / float(windowSize);
+        if(arbitraryWindowSize){
+            this->windowSize = windowSize;
+            inverseWindowSize = 1.0 / float(windowSize);
+            window = new T[this->windowSize];
+        }
+        else{
+            while(windowSize > 1){
+                windowSize = windowSize >> 1;
+                powerOfTwo++;
+            }
+            this->windowSize = 1;
+            for(int i = 0; i < powerOfTwo; i++){
+            this->windowSize *= 2;
+            }
+            window = new T[this->windowSize];
+        }
+    }
+
+    void init(uint16_t windowSize){
+        // Use a power of 2 for the window size.
+        inverseWindowSize = 1.0 / float(windowSize);
+        while(windowSize > 1){
+            windowSize = windowSize >> 1;
+            powerOfTwo++;
+        }
+        this->windowSize = 1;
+        for(int i = 0; i < powerOfTwo; i++){
+        this->windowSize *= 2;
+        }
+        window = new T[this->windowSize];
+    }
+
     T update(T newValue){
         // add a new value to the window and return the new moving average value.
         if(windowFull){
@@ -87,7 +127,7 @@ public:
             window[i] = newValue;
             sum = sum + window[i];
             i++;
-            average = sum / i;
+            average = sum * inverseWindowSize;
             if(i >= windowSize){
                 windowFull = true;
                 i = 0;
@@ -111,7 +151,7 @@ public:
             window[i] = newValue;
             sum = sum + window[i];
             i++;
-            average = sum / i;
+            average = sum * inverseWindowSize;
             if(i >= windowSize){
                 windowFull = true;
                 i = 0;
